@@ -84,4 +84,7 @@ Here we see that the difference between the imputed mean and actual mean is less
 
 Hence, we can conclude that the imputed mean is a good estimate of the true mean bill length for the penguins dataset.
 
+# Special Thanks
+I'd like to thank Fares Alkorani for his feedback on issues within my paper, specifically regarding formatting and spelling errors.
+
 # References
