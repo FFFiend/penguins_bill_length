@@ -1,0 +1,87 @@
+---
+title: "An Exercise in the Missing Data at Random methodology conducted on penguin bill length (in mm)"
+author: 
+  - Owais Zahid
+thanks: "Code and data are available at: https://github.com/FFFiend/penguins_bill_length"
+date: today
+date-format: long
+abstract: "In this paper, we examine the effect of removing data at random with respect to the bill length variable in the penguins dataset, on the mean bill length value. We then draw a comparison to see whether this imputed value is a good estimate for the mean."
+format: pdf
+number-sections: true
+bibliography: references.bib
+---
+# Loading and previewing the data
+In this step we load the necessary packages, (Mice [@citemice], Tidyverse [@citetidy] and Palmerpenguins [@citepalmer]) and obtain a preview of the penguins dataset to see what kind of data we are working with.
+Additionally as a quick disclaimer, we are going to be using the R programming language [@citeR], as well as RStudio [@citeRStudio] for the remainder of the paper.
+```{r}
+#| include: true
+#| warning: false
+#| message: false
+#| echo: false
+set.seed(71)
+library(mice)
+library(tidyverse)
+library(palmerpenguins)
+
+dataset = data(package='palmerpenguins')
+
+# loading the dataset in.
+cat("Table 1. Penguins Table Header")
+head(penguins)
+```
+We observe that there are 6 columns in total, and our variable of interest is the bill_length_mm column for the Missing At Random (MAR) methodology.
+
+# Constructing MAR table
+In order to remove entries with respect to the bill length, we replace all entries with bill length between 34 and 40 mm (inclusive) with NA, and construct the following table. The range 34-40 inclusive seemed suitable as most bill length values seemed to be in or around that range. We then obtain the following table.
+```{r}
+#| include: true
+#| warning: false
+#| message: false
+#| echo: false
+penguins_MAR <- penguins %>%
+  mutate(
+    bill_length_mm = if_else(bill_length_mm >= 34 & bill_length_mm <= 40,
+                             NA_real_,
+                             bill_length_mm)
+  )
+cat("Table 2. New penguins table with bill length between 34 and 40 MAR")
+head(penguins_MAR)
+```
+# Imputation and Comparison
+Next, we calculate the mean bill length from the original dataset, as well as the mean bill length for the penguins_MAR dataset after which we perform multiple imputation on the former table, to finally obtain the table below.
+```{r}
+#| include: true
+#| warning: false
+#| message: false
+#| echo: false
+multiple_imputation <-
+  mice(
+    penguins_MAR,
+    print = FALSE
+  )
+
+mice_estimates <-
+  complete(multiple_imputation) |>
+  as_tibble()
+
+# Calculate statistics
+drop_missing <- sum(is.na(penguins_MAR$bill_length_mm))
+input_mean <- mean(penguins_MAR$bill_length_mm, na.rm = TRUE)
+multiple_imputation <- mean(mice_estimates$bill_length_mm, na.rm = TRUE)
+actual <- mean(penguins$bill_length_mm, na.rm = TRUE)
+
+# Create a data frame with the statistics
+imputation_stats <- data.frame(
+  Method = c("Drop missing", "Input mean", "Multiple imputation", "Actual"),
+  Value = c(drop_missing, input_mean, multiple_imputation, actual)
+)
+
+# Print the table
+cat("Table 3. Comparing the imputed value of bill length with the original mean bill length")
+knitr::kable(imputation_stats, format = "markdown")
+```
+Here we see that the difference between the imputed mean and actual mean is less than the difference between the input mean (i.e the mean bill length from Table 2) and the original. We also note that a total of 99 entries were removed (set to NA) in the process which led to a higher mean value.
+
+Hence, we can conclude that the imputed mean is a good estimate of the true mean bill length for the penguins dataset.
+
+# References
